@@ -21,14 +21,16 @@ public class PlayerRecovered implements Listener {
             //Collection<Villager> players = e.getEntity().getWorld().getEntitiesByClass(Villager.class);
             //double damageEach = e.getAmount() / (players.size() + players2.size());
             double damageEach = e.getAmount() / players2.size();
-            e.setAmount(0);
+            e.setAmount(damageEach);
             /*for (LivingEntity player : players) {
                 player.setHealth(Math.min(damageEach + player.getHealth(), Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue()));
                 // Do something with each player
             }*/
             for (Player player2 : players2) {
-                player2.setHealth(Math.min(damageEach + player2.getHealth(), Objects.requireNonNull(player2.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue()));
-                // Do something with each player
+                if(player2 != e.getEntity()) {
+                    player2.setHealth(Math.min(damageEach + player2.getHealth(), Objects.requireNonNull(player2.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getValue()));
+                    // Do something with each player
+                }
             }
         }
     }
