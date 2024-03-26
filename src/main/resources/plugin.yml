@@ -1,0 +1,4 @@
+name: CommunistSurvival
+version: '${version}'
+main: org.moon.communistsurvival.CommunistSurvival
+api-version: '1.16'

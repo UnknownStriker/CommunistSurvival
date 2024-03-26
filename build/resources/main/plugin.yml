@@ -1,0 +1,4 @@
+name: CommunistSurvival
+version: '1.0-SNAPSHOT'
+main: org.moon.communistsurvival.CommunistSurvival
+api-version: '1.16'
