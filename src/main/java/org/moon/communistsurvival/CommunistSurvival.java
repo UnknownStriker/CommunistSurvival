@@ -10,6 +10,7 @@ public final class CommunistSurvival extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("Communist Survival Started");
+        this.saveDefaultConfig();
         getServer().getPluginManager().registerEvents(new PlayerDamaged(), this);
         getServer().getPluginManager().registerEvents(new PlayerRecovered(), this);
         getServer().getPluginManager().registerEvents(new PlayerLogin(), this);
