@@ -7,60 +7,67 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.moon.communistsurvival.CommunistSurvival;
+import org.moon.communistsurvival.playerList;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
+
 public class PlayerDamaged implements Listener {
     @EventHandler
-    public void damagedByEntity(EntityDamageByEntityEvent e) {
-        if(e.getEntityType() == EntityType.PLAYER) {
-            boolean pvpMode = CommunistSurvival.getPlugin(CommunistSurvival.class).getConfig().getBoolean("PvpMode");
-            Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-            if(pvpMode) {
-                double damageUnrelated = e.getFinalDamage() / 4;
-                double damageCauser = e.getFinalDamage() / 2;
-                for (Player player2 : players) {
-                    if(player2 != e.getEntity() && !player2.isDead()) {
-                        if(player2 == e.getDamager() || (e.getCause() == EntityDamageEvent.DamageCause.PROJECTILE && e.getDamager() instanceof Projectile && ((Projectile) e.getDamager()).getShooter() == player2)) {
-                            player2.damage(damageCauser);
-                            player2.sendMessage(String.format("You got %.2f damage by attacking %s", damageCauser, e.getEntity().getName()));
-                        }
-                        else {
-                            player2.damage(damageUnrelated);
-                        }
-                    }
-                }
-            }
-            else {
-                double damageEach = e.getFinalDamage() / players.size();
-                e.setDamage(damageEach);
-                for (Player player2 : players) {
-                    if(player2 != e.getEntity() && !player2.isDead()) {
-                        player2.damage(damageEach);
-                    }
-                }
-            }
+    public void onPlayerDamage(EntityDamageEvent e) {
+        if (!(e.getEntity() instanceof Player)) return; //플레이어가 아니면 리턴
+        boolean pvpMode = playerList.isPvp; //PVP 모드인지 확인
+        Collection<Player> players = Bukkit.getOnlinePlayers().stream() //분배 대상 플레이어들 수집
+                .filter(player -> playerList.comrades.contains(player.getName()))
+                .collect(Collectors.toList());
+        if(!playerList.comrades.contains(e.getEntity().getName())) return;
 
+        if (e instanceof EntityDamageByEntityEvent) { //엔티티한테 얻어맞았으면
+            EntityDamageByEntityEvent entityDamage = (EntityDamageByEntityEvent) e;
+            handleEntityDamageByEntity(entityDamage, players, pvpMode);
+        } else { //아니면
+            handleNonEntityDamage(e, players, pvpMode);
         }
     }
 
-    @EventHandler
-    public void damagedNonEntity(EntityDamageEvent e) {
-        if(e.getEntityType() == EntityType.PLAYER && (e.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK && e.getCause() != EntityDamageEvent.DamageCause.PROJECTILE && e.getCause() != EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK && e.getCause() != EntityDamageEvent.DamageCause.ENTITY_EXPLOSION &&  e.getCause() != EntityDamageEvent.DamageCause.CUSTOM)) {
-            Collection<? extends Player> players2 = Bukkit.getOnlinePlayers();
-            boolean pvpMode = CommunistSurvival.getPlugin(CommunistSurvival.class).getConfig().getBoolean("PvpMode");
-            double damageEach;
-            if(pvpMode) {
-                damageEach = e.getFinalDamage() / 4;
-            }
-            else {
-                damageEach = e.getFinalDamage() / players2.size();
-                e.setDamage(damageEach);
-            }
-            for (Player player2 : players2) {
-                if(player2 != e.getEntity() && !player2.isDead()) {
-                    player2.damage(damageEach);
+    private void handleEntityDamageByEntity(EntityDamageByEntityEvent e, Collection<Player> players, boolean pvpMode) {
+        if (pvpMode) { //PVP 모드면
+            double damageUnrelated = e.getFinalDamage() / 4; //관련 X -> 25%
+            double damageCauser = e.getFinalDamage() / 2; // 내가 때림 -> 50%
+            for (Player player : players) {
+                if (player != e.getEntity() && !player.isDead()) {
+                    if (player == e.getDamager() || (e.getCause() == EntityDamageEvent.DamageCause.PROJECTILE && e.getDamager() instanceof Projectile && ((Projectile) e.getDamager()).getShooter() == player)) {
+                        player.damage(damageCauser);
+                        player.sendMessage(String.format("You got %.2f damage by attacking %s", damageCauser, e.getEntity().getName()));
+                    } else {
+                        player.damage(damageUnrelated);
+                    }
                 }
-                // Do something with each player
+            }
+        } else { //아니면
+            distributeDamageEqually(e, players); //데미지 분배
+        }
+    }
+
+    private void handleNonEntityDamage(EntityDamageEvent e, Collection<Player> players, boolean pvpMode) {
+        if(e.getCause() == EntityDamageEvent.DamageCause.CUSTOM) return;
+        if (pvpMode) { //PVP 모드면
+            for (Player player : players) {
+                if (player != e.getEntity() && !player.isDead()) {
+                    player.damage(e.getFinalDamage() / 4); // 25% 데미지
+                }
+            }
+        } else {
+            distributeDamageEqually(e, players); //데미지 분배
+        }
+    }
+
+    private void distributeDamageEqually(EntityDamageEvent e, Collection<Player> players) {
+        double damageEach = e.getFinalDamage() / players.size();
+        e.setDamage(damageEach);
+        for (Player player : players) {
+            if (player != e.getEntity() && !player.isDead()) {
+                player.damage(damageEach);
             }
         }
     }

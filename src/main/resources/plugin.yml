@@ -2,3 +2,12 @@ name: CommunistSurvival
 version: '${version}'
 main: org.moon.communistsurvival.CommunistSurvival
 api-version: '1.16'
+commands:
+  AddPlayer:
+    description: Add a Player.
+  RemovePlayer:
+    description: Remove a Player.
+  ListPlayers:
+    description: Show Players.
+  SetMode:
+    description: change plugin mode.
